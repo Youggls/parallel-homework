@@ -39,8 +39,10 @@ int main(int argc, char** argv) {
     float** data = init2dArray(dataSize, featureSize);
     struct timespec start, end;
     std::cout << "Begin forward." << std::endl;
+    float** a = init2dArray(200, 1000);
+    float** b = init2dArray(1000, 400);
     clock_gettime(CLOCK_MONOTONIC, &start);
-    n->forward(data, dataSize);
+    float** c = matmul(a, b, {200, 1000}, {1000, 400}, simd);
     clock_gettime(CLOCK_MONOTONIC, &end);
     std::cout << "End forward." << std::endl;
     if (simd) {
