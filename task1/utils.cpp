@@ -1,6 +1,6 @@
 #include "utils.hpp"
 #include <bits/stdc++.h>
-#ifdef __arm__
+#ifdef __aarch64__
 #include <arm_neon.h>
 #endif
 using std::vector;
@@ -51,7 +51,7 @@ float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shape
     float** c = init2dArray(shapeA[0], shapeB[1]);
     float** bT = transpose(b, shapeB);
     if (simd) {
-#ifdef __arm__
+#ifdef __aarch64__
         for (size_t i = 0; i < shapeA[0]; i += 1) {
             for (size_t j = 0; j < shapeB[1]; j += 1) {
                 for (size_t k = 0; k < shapeA[1] - 3; k += 4) {
@@ -108,7 +108,7 @@ float** matAdd1dArray(float** a, float* b, vector<size_t> shapeA, vector<size_t>
     float** c = generateNewCopy ? init2dArray(shapeA[0], shapeA[1], 0.0) : a;
     for (size_t i = 0; i < shapeA[0]; i++) {
         if (simd) {
-#ifdef __arm__
+#ifdef __aarch64__
             for (size_t j = 0; j < shapeA[1] - 3; j += 4) {
                 float32x4_t a4 = vld1q_f32(a[i] + j);
                 float32x4_t b4 = vld1q_f32(b + j);

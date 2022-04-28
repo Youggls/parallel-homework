@@ -28,21 +28,21 @@ Network::~Network() {
 }
 
 float** Network::forward(float** input, size_t batchSize, bool requiredGrad) {
-    float** hidden1 = linearLayer(input, this->weight1, this->bias1, batchSize, this->inputSize, this->hiddenSize, simd);
-    float** activatedHidden1 = sigmoid(hidden1, {batchSize, this->hiddenSize});
-    float** hidden2 = linearLayer(activatedHidden1, this->weight2, this->bias2, batchSize, this->hiddenSize, this->outputSize, simd);
-    float** prob = softmax(hidden2, {batchSize, this->outputSize});
+    float** hidden1 = linearLayer(input, this->weight1, this->bias1, batchSize, this->inputSize, this->hiddenSize, this->simd);
+//    float** activatedHidden1 = sigmoid(hidden1, {batchSize, this->hiddenSize});
+    float** hidden2 = linearLayer(hidden1, this->weight2, this->bias2, batchSize, this->hiddenSize, this->outputSize, this->simd);
+//    float** prob = softmax(hidden2, {batchSize, this->outputSize});
 
 
     if (requiredGrad) {
         this->tempResult.push_back({hidden2, {batchSize, this->outputSize}});
-        this->tempResult.push_back({activatedHidden1, {batchSize, this->hiddenSize}});
+  //      this->tempResult.push_back({activatedHidden1, {batchSize, this->hiddenSize}});
         this->tempResult.push_back({hidden1, {batchSize, this->hiddenSize}});
     } else {
         free2d(hidden1, {batchSize, this->hiddenSize});
-        free2d(activatedHidden1, {batchSize, this->hiddenSize});
+    //    free2d(activatedHidden1, {batchSize, this->hiddenSize});
     }
-    return prob;
+    return hidden2;
 }
 
 

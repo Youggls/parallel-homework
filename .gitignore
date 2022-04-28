@@ -43,6 +43,7 @@
 build/
 main
 main-arm
+main-huawei
 
 # VS Code configuration
 .vscode/
