@@ -85,6 +85,11 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+    std::cout << "dataSize: " << dataSize << std::endl;
+    std::cout << "featureSize: " << featureSize << std::endl;
+    std::cout << "hiddenSize: " << hiddenSize << std::endl;
+    std::cout << "outputSize: " << outputSize << std::endl;
+    std::cout << "simd: " << simd << std::endl;
     if (task == 0) {
         testAll(dataSize, featureSize, hiddenSize, outputSize, simd);
     } else if (task == 1) {
