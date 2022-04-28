@@ -1,0 +1,7 @@
+# Parallel Homework
+
+1. SIMD
+
+2. Multi thread(Pthread or MPI)
+
+3. CUDA or OMP
