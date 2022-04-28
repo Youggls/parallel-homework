@@ -3,19 +3,64 @@
 #include "utils.hpp"
 #include <ctime>
 
+void printSIMD(bool simd) {
+    if (simd) {
+        std::cout << "SIMD ";
+    } else {
+        std::cout << "Normal ";
+    }
+}
+
+void testAll(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd) {
+    Network* n = new Network(featureSize, hiddenSize, outputSize, simd);
+    float** data = init2dArray(dataSize, featureSize);
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    n->forward(data, dataSize, false);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    printSIMD(simd);
+    std::cout << "NN forward time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
+    std::cout << "end" << std::endl;
+}
+
+void testMatMul(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd) {
+    struct timespec start, end;
+    float** data = init2dArray(dataSize, featureSize);
+    float** weight1 = init2dArray(featureSize, hiddenSize);
+    float** weight2 = init2dArray(hiddenSize, outputSize);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    float** res1 = matmul(data, weight1, {dataSize, featureSize}, {featureSize, hiddenSize}, simd);
+    float** res2 = matmul(res1, weight2, {dataSize, hiddenSize}, {hiddenSize, outputSize}, simd);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    printSIMD(simd);
+    std::cout << "matrix multiply time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
+}
+
+void testMatAdd(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd) {
+    struct timespec start, end;
+    float** h1 = init2dArray(dataSize, hiddenSize);
+    float** h2 = init2dArray(dataSize, outputSize);
+    float* bias1 = init1dArray(hiddenSize);
+    float* bias2 = init1dArray(outputSize);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    float** res1 = matAdd1dArray(h1, bias1, {dataSize, hiddenSize}, {hiddenSize}, simd);
+    float** res2 = matAdd1dArray(h2, bias2, {dataSize, outputSize}, {outputSize}, simd);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    printSIMD(simd);
+    std::cout << "matrix add time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
+}
+
 int main(int argc, char** argv) {
-    // float** w = init2dArray(20, 30);
-    // float* b = init1dArray(30);
-    // float** x = init2dArray(10, 20);
-    // linearLayer(x, w, b, 10, 20, 30, false);
-    // Network* n = new Network(20, 30, 10, false);
-    // n->forward(x, 10, false);
     bool simd = false;
-    int dataSize = 1000;
-    int featureSize = 100;
-    int hiddenSize = 200;
-    int outputSize = 200;
-    for (int i = 1; i < argc; i += 2) {
+    size_t dataSize = 1000;
+    size_t featureSize = 100;
+    size_t hiddenSize = 200;
+    size_t outputSize = 200;
+    // 0: testAll
+    // 1: testMatMul
+    // 2: testMatAdd
+    int task = 0;
+    for (size_t i = 1; i < argc; i += 2) {
         if (strcmp(argv[i], "-s") == 0) {
             if (strcmp(argv[i + 1], "true") == 0) {
                 simd = true;
@@ -33,24 +78,23 @@ int main(int argc, char** argv) {
             hiddenSize = atoi(argv[i + 1]);
         } else if (strcmp(argv[i], "-o") == 0) {
             outputSize = atoi(argv[i + 1]);
+        } else if (strcmp(argv[i], "-t") == 0) {
+            task = atoi(argv[i + 1]);
+        } else {
+            std::cerr << "Invalid argument" << std::endl;
+            return 1;
         }
     }
-    Network* n = new Network(featureSize, hiddenSize, outputSize, simd);
-    float** data = init2dArray(dataSize, featureSize);
-    struct timespec start, end;
-    std::cout << "Begin forward." << std::endl;
-    float** a = init2dArray(200, 1000);
-    float** b = init2dArray(1000, 400);
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    float** c = matmul(a, b, {200, 1000}, {1000, 400}, simd);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    std::cout << "End forward." << std::endl;
-    if (simd) {
-        std::cout << "SIMD ";
+    if (task == 0) {
+        testAll(dataSize, featureSize, hiddenSize, outputSize, simd);
+    } else if (task == 1) {
+        testMatMul(dataSize, featureSize, hiddenSize, outputSize, simd);
+    } else if (task == 2) {
+        testMatAdd(dataSize, featureSize, hiddenSize, outputSize, simd);
     } else {
-        std::cout << "Normal ";
+        std::cerr << "Invalid task" << std::endl;
+        return 1;
     }
-    std::cout << "time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
-    std::cout << "end" << std::endl;
+    
     return 0;
 }
