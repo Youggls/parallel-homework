@@ -50,6 +50,21 @@ void testMatAdd(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t o
     std::cout << "matrix add time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
 }
 
+void testMemoryAllocat(size_t dataSzie, size_t featureSize, size_t hiddenSize, size_t outputSize) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    float** a1 = init2dArray(dataSzie, hiddenSize);
+    float** a2 = init2dArray(dataSzie, outputSize);
+    float** a3 = init2dArray(dataSzie, hiddenSize);
+    float** a4 = init2dArray(dataSzie, outputSize);
+    free2d(a1, {dataSzie, hiddenSize});
+    free2d(a2, {dataSzie, outputSize});
+    free2d(a3, {dataSzie, hiddenSize});
+    free2d(a4, {dataSzie, outputSize});
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    std::cout << "memory allocate time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
+}
+
 int main(int argc, char** argv) {
     bool simd = false;
     bool cache = false;
