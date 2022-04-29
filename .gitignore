@@ -44,6 +44,6 @@ build/
 main
 main-arm
 main-huawei
-
+res.txt
 # VS Code configuration
 .vscode/
