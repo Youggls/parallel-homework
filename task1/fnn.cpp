@@ -1,7 +1,7 @@
 #include "./fnn.hpp"
 #include "./utils.hpp"
 
-Network::Network(size_t inputSize, size_t hiddenSize, size_t outputSize, bool simd) {
+Network::Network(size_t inputSize, size_t hiddenSize, size_t outputSize, bool simd, bool cache) {
     // Set class attribute
     this->inputSize = inputSize;
     this->hiddenSize = hiddenSize;
@@ -12,6 +12,7 @@ Network::Network(size_t inputSize, size_t hiddenSize, size_t outputSize, bool si
     this->bias1 = init1dArray(hiddenSize);
     this->bias2 = init1dArray(outputSize);
     this->simd = simd;
+    this->cache = cache;
 }
 
 Network::~Network() {
@@ -28,9 +29,9 @@ Network::~Network() {
 }
 
 float** Network::forward(float** input, size_t batchSize, bool requiredGrad) {
-    float** hidden1 = linearLayer(input, this->weight1, this->bias1, batchSize, this->inputSize, this->hiddenSize, this->simd);
+    float** hidden1 = linearLayer(input, this->weight1, this->bias1, batchSize, this->inputSize, this->hiddenSize, this->simd, this->cache);
 //    float** activatedHidden1 = sigmoid(hidden1, {batchSize, this->hiddenSize});
-    float** hidden2 = linearLayer(hidden1, this->weight2, this->bias2, batchSize, this->hiddenSize, this->outputSize, this->simd);
+    float** hidden2 = linearLayer(hidden1, this->weight2, this->bias2, batchSize, this->hiddenSize, this->outputSize, this->simd, this->cache);
 //    float** prob = softmax(hidden2, {batchSize, this->outputSize});
 
 

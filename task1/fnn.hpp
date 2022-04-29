@@ -16,12 +16,13 @@ private:
     float* gradBias1;
     float* gradBias2;
     bool simd;
+    bool cache;
     vector<pair<float**, vector<size_t>>> tempResult;
     size_t inputSize;
     size_t hiddenSize;
     size_t outputSize;
 public:
-    Network(size_t inputSize, size_t hiddenSize, size_t outputSize, bool simd = false);
+    Network(size_t inputSize, size_t hiddenSize, size_t outputSize, bool simd = false, bool cache = false);
     ~Network();
     float** forward(float** input, size_t batchSize, bool requiredGrad=false);
     void train(float** data, float* target, size_t epoch, size_t dataSize, size_t batchSize, float learningRate);

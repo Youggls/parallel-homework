@@ -2,6 +2,8 @@
 #include <bits/stdc++.h>
 #ifdef __aarch64__
 #include <arm_neon.h>
+#elif __x86_64__
+#include <pmmintrin.h>
 #endif
 using std::vector;
 
@@ -44,7 +46,7 @@ float** init2dArray(size_t m, size_t n, float defaultValue) {
     return a;
 }
 
-float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shapeB, bool simd) {
+float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shapeB, bool simd, bool cache) {
     if (shapeA[1] != shapeB[0]) {
         throw "matmul: shape mismatch";
     }
@@ -68,6 +70,25 @@ float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shape
                 }
             }
         }
+#elif __x86_64__
+        for (size_t i = 0; i < shapeA[0]; i += 1) {
+            for (size_t j = 0; j < shapeB[1]; j += 1) {
+                __m128 sum = _mm_setzero_ps();
+                for (size_t k = 0; k < shapeA[1] - 3; k += 4) {
+                    __m128 t1 = _mm_loadu_ps(a[i] + k);
+                    __m128 t2 = _mm_loadu_ps(bT[j] + k);
+                    t1 = _mm_mul_ps(t1, t2);
+                    sum = _mm_add_ps(sum, t1);
+                }
+                sum = _mm_hadd_ps(sum, sum);
+                sum = _mm_hadd_ps(sum, sum);
+                _mm_store_ss(c[i] + j, sum);
+                size_t mod = shapeA[1] % 4;
+                for (size_t k = shapeA[1] - mod; k < shapeA[1]; k++) {
+                    c[i][j] += a[i][k] * bT[j][k];
+                }
+            }
+        }
 #else
         for (size_t i = 0; i < shapeA[0]; i++) {
             for (size_t j = 0; j < shapeB[1]; j++) {
@@ -79,10 +100,20 @@ float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shape
 #endif
     }
     else {
-        for (size_t i = 0; i < shapeA[0]; i++) {
-            for (size_t j = 0; j < shapeB[1]; j++) {
-                for (size_t k = 0; k < shapeA[1]; k++) {
-                    c[i][j] += a[i][k] * b[k][j];
+        if (cache) {
+            for (size_t i = 0; i < shapeA[0]; i++) {
+                for (size_t j = 0; j < shapeB[1]; j++) {
+                    for (size_t k = 0; k < shapeA[1]; k++) {
+                        c[i][j] += a[i][k] * bT[j][k];
+                    }
+                }
+            }
+        } else {
+            for (size_t i = 0; i < shapeA[0]; i++) {
+                for (size_t j = 0; j < shapeB[1]; j++) {
+                    for (size_t k = 0; k < shapeA[1]; k++) {
+                        c[i][j] += a[i][k] * b[k][j];
+                    }
                 }
             }
         }
@@ -114,6 +145,17 @@ float** matAdd1dArray(float** a, float* b, vector<size_t> shapeA, vector<size_t>
                 float32x4_t b4 = vld1q_f32(b + j);
                 float32x4_t c4 = vaddq_f32(a4, b4);
                 vst1q_f32(c[i] + j, c4);
+            }
+            size_t mod = shapeA[1] % 4;
+            for (size_t j = shapeA[1] - mod; j < shapeA[1]; j++) {
+                c[i][j] = a[i][j] + b[j];
+            }
+#elif __x86_64__
+            for (size_t j = 0; j < shapeA[1] - 3; j += 4) {
+                __m128 t1 = _mm_loadu_ps(a[i] + j);
+                __m128 t2 = _mm_loadu_ps(b + j);
+                t1 = _mm_add_ps(t1, t2);
+                _mm_storeu_ps(c[i] + j, t1);
             }
             size_t mod = shapeA[1] % 4;
             for (size_t j = shapeA[1] - mod; j < shapeA[1]; j++) {
@@ -201,11 +243,11 @@ float* arrayAddArray(float* a, float* b, size_t size, bool generateNewCopy) {
     return c;
 }
 
-float** linearLayer(float** input, float** weight, float* bias, size_t batchSize, size_t inputSize, size_t outputSize, bool simd) {
+float** linearLayer(float** input, float** weight, float* bias, size_t batchSize, size_t inputSize, size_t outputSize, bool simd, bool cache) {
     vector<size_t> inputShape = {batchSize, inputSize};
     vector<size_t> weightShape = {inputSize, outputSize};
     vector<size_t> outputShape = {batchSize, outputSize};
-    float** output = matmul(input, weight, inputShape, weightShape, simd);
+    float** output = matmul(input, weight, inputShape, weightShape, simd, cache);
     // Wouldn't re allocating memory
     output = matAdd1dArray(output, bias, outputShape, {outputSize}, true, simd);
     return output;

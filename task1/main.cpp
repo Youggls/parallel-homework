@@ -52,6 +52,7 @@ void testMatAdd(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t o
 
 int main(int argc, char** argv) {
     bool simd = false;
+    bool cache = false;
     size_t dataSize = 1000;
     size_t featureSize = 100;
     size_t hiddenSize = 200;
@@ -70,6 +71,15 @@ int main(int argc, char** argv) {
                 std::cerr << "Invalid argument for -s" << std::endl;
                 return 1;
             }
+        } else if (strcmp(argv[i], "-c")) {
+            if (strcmp(argv[i + 1], "true") == 0) {
+                cache = true;
+            } else if (strcmp(argv[i + 1], "false") == 0) {
+                cache = false;
+            } else {
+                std::cerr << "Invalid argument for -c" << std::endl;
+                return 1;
+            }
         } else if (strcmp(argv[i], "-d") == 0) {
             dataSize = atoi(argv[i + 1]);
         } else if (strcmp(argv[i], "-f") == 0) {
@@ -85,11 +95,13 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+    std::cout << "******** Configuration *********" << std::endl;
     std::cout << "dataSize: " << dataSize << std::endl;
     std::cout << "featureSize: " << featureSize << std::endl;
     std::cout << "hiddenSize: " << hiddenSize << std::endl;
     std::cout << "outputSize: " << outputSize << std::endl;
-    std::cout << "simd: " << simd << std::endl;
+    std::cout << "SIMD optimize: " << simd << std::endl;
+    std::cout << "Cache optimize: " << cache << std::endl;
     if (task == 0) {
         testAll(dataSize, featureSize, hiddenSize, outputSize, simd);
     } else if (task == 1) {
