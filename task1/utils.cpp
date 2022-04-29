@@ -51,7 +51,10 @@ float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shape
         throw "matmul: shape mismatch";
     }
     float** c = init2dArray(shapeA[0], shapeB[1]);
-    float** bT = transpose(b, shapeB);
+    float** bT = nullptr;
+    if (simd || cache) {
+        bT = transpose(b, shapeB);
+    }
     if (simd) {
 #ifdef __aarch64__
         for (size_t i = 0; i < shapeA[0]; i += 1) {
@@ -118,7 +121,9 @@ float** matmul(float** a, float** b, vector<size_t> shapeA, vector<size_t> shape
             }
         }
     }
-    free2d(bT, {shapeB[1], shapeB[0]});
+    if (simd || cache) {
+        free2d(bT, {shapeB[1], shapeB[0]});
+    }
     return c;
 }
 

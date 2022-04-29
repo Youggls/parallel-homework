@@ -11,8 +11,8 @@ void printSIMD(bool simd) {
     }
 }
 
-void testAll(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd) {
-    Network* n = new Network(featureSize, hiddenSize, outputSize, simd);
+void testAll(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd, bool cache) {
+    Network* n = new Network(featureSize, hiddenSize, outputSize, simd, cache);
     float** data = init2dArray(dataSize, featureSize);
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -23,14 +23,14 @@ void testAll(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outp
     std::cout << "end" << std::endl;
 }
 
-void testMatMul(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd) {
+void testMatMul(size_t dataSize, size_t featureSize, size_t hiddenSize, size_t outputSize, bool simd, bool cache) {
     struct timespec start, end;
     float** data = init2dArray(dataSize, featureSize);
     float** weight1 = init2dArray(featureSize, hiddenSize);
     float** weight2 = init2dArray(hiddenSize, outputSize);
     clock_gettime(CLOCK_MONOTONIC, &start);
-    float** res1 = matmul(data, weight1, {dataSize, featureSize}, {featureSize, hiddenSize}, simd);
-    float** res2 = matmul(res1, weight2, {dataSize, hiddenSize}, {hiddenSize, outputSize}, simd);
+    float** res1 = matmul(data, weight1, {dataSize, featureSize}, {featureSize, hiddenSize}, simd, cache);
+    float** res2 = matmul(res1, weight2, {dataSize, hiddenSize}, {hiddenSize, outputSize}, simd, cache);
     clock_gettime(CLOCK_MONOTONIC, &end);
     printSIMD(simd);
     std::cout << "matrix multiply time cost in total: " << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << "ms" << std::endl;
@@ -104,9 +104,9 @@ int main(int argc, char** argv) {
     std::cout << "SIMD optimize: " << simd << std::endl;
     std::cout << "Cache optimize: " << cache << std::endl;
     if (task == 0) {
-        testAll(dataSize, featureSize, hiddenSize, outputSize, simd);
+        testAll(dataSize, featureSize, hiddenSize, outputSize, simd, cache);
     } else if (task == 1) {
-        testMatMul(dataSize, featureSize, hiddenSize, outputSize, simd);
+        testMatMul(dataSize, featureSize, hiddenSize, outputSize, simd, cache);
     } else if (task == 2) {
         testMatAdd(dataSize, featureSize, hiddenSize, outputSize, simd);
     } else {
