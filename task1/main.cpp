@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
                 std::cerr << "Invalid argument for -s" << std::endl;
                 return 1;
             }
-        } else if (strcmp(argv[i], "-c")) {
+        } else if (strcmp(argv[i], "-c") == 0) {
             if (strcmp(argv[i + 1], "true") == 0) {
                 cache = true;
             } else if (strcmp(argv[i + 1], "false") == 0) {
@@ -91,7 +91,8 @@ int main(int argc, char** argv) {
         } else if (strcmp(argv[i], "-t") == 0) {
             task = atoi(argv[i + 1]);
         } else {
-            std::cerr << "Invalid argument" << std::endl;
+            std::cout << argv[i];
+            std::cerr << " Invalid argument" << std::endl;
             return 1;
         }
     }

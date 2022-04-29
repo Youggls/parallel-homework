@@ -1,4 +1,4 @@
-exec_name="main-huawei"
+exec_name="main"
 
 ./${exec_name} -s false -c false -d 512 -h 2048 -f 256 -o 32 -t 0
 ./${exec_name} -s false -c true -d 512 -h 2048 -f 256 -o 32 -t 0
