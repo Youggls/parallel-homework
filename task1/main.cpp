@@ -124,6 +124,8 @@ int main(int argc, char** argv) {
         testMatMul(dataSize, featureSize, hiddenSize, outputSize, simd, cache);
     } else if (task == 2) {
         testMatAdd(dataSize, featureSize, hiddenSize, outputSize, simd);
+    } else if (task == 3) {
+        testMemoryAllocat(dataSize, featureSize, hiddenSize, outputSize);
     } else {
         std::cerr << "Invalid task" << std::endl;
         return 1;
