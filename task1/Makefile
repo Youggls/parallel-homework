@@ -1,14 +1,14 @@
 build:
 	g++ -O2 -msse4.1 utils.cpp fnn.cpp main.cpp -o main
 
+build-qemu:
+	aarch64-linux-gnu-g++ -O2 -o main-qemu -mcpu=cortex-a76 utils.cpp fnn.cpp main.cpp
+
 build-arm:
-	aarch64-linux-gnu-g++ -O2 -o main-arm -mcpu=cortex-a76 utils.cpp fnn.cpp main.cpp
+	g++ -O2 -o main-arm -mcpu=cortex-a76 utils.cpp fnn.cpp main.cpp
 
-build-huawei:
-	g++ -O2 -o main-huawei -mcpu=cortex-a76 utils.cpp fnn.cpp main.cpp
-
-run:
-	qemu-arm -L /usr/arm-linux-gnueabihf/ main-arm
+run-qemu:
+	qemu-arm -L /usr/aarch64-linux-gnu/ main-qemu
 
 clean:
-	rm -rf main main-arm
+	rm -rf main main-arm main-qemu
