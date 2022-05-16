@@ -1,9 +1,16 @@
 #include "./module.hpp"
 #include <random>
 #include <iostream>
+#ifdef __aarch64__
+#include <arm_neon.h>
+#elif __x86_64__
+#include <pmmintrin.h>
+#endif
 using std::random_device;
 using std::ranlux48;
 using std::uniform_real_distribution;
+
+bool Config::simd = false;
 
 Matrix::Matrix(float** data, vector<size_t> shape) {
     this->data = data;
@@ -16,6 +23,13 @@ Matrix::Matrix(vector<size_t> shape) {
     for (size_t i = 0; i < this->shape[0]; i++) {
         this->data[i] = new float[this->shape[1]];
     }
+}
+
+Matrix::~Matrix() {
+    for (size_t i = 0; i < this->shape[0]; i++) {
+        delete[] this->data[i];
+    }
+    delete[] this->data;
 }
 
 void Matrix::random_init() {
@@ -69,13 +83,61 @@ Matrix* operator*(const Matrix& m1, const Matrix& m2) {
         throw "Shape error!";
     }
     Matrix* result = new Matrix({m1.shape[0], m2.shape[1]});
-    for (size_t i = 0; i < m1.shape[0]; i += 1) {
-        for (size_t j = 0; j < m1.shape[1]; j += 1) {
-            float sum = 0.0;
-            for (size_t k = 0; k < m2.shape[0]; k += 1) {
-                sum += m1.data[i][k] * m2.data[k][j];
+    if (Config::simd) {
+#ifdef __aarch64__
+        for (size_t i = 0; i < m1.shape[0]; i += 1) {
+            for (size_t j = 0; j < m2.shape[1]; j += 1) {
+                for (size_t k = 0; k < m1.shape[1] - 3; k += 4) {
+                    float32x4_t a4 = vld1q_f32(m1.data[i] + k);
+                    float* tempB = new float[4];
+                    for (size_t t = k; t < m1.shape[1] - 3; t += 4) {
+                        tempB[t - k] = m2.data[t][j];
+                    }
+                    float32x4_t b4 = vld1q_f32(tempB);
+                    float32x4_t c4 = vmulq_f32(a4, b4);
+                    float32x2_t c2 = vadd_f32(vget_high_f32(c4), vget_low_f32(c4));
+                    float32x2_t c1 = vpadd_f32(c2, c2);
+                    result->data[i][j] += vget_lane_f32(c1, 0);
+                }
+                size_t mod = m1.shape[1] % 4;
+                for (size_t k = m1.shape[1] - mod; k < m1.shape[1]; k++) {
+                    result->data[i][j] += m1.data[i][k] * m2.data[k][j];
+                }
             }
-            result->data[i][j] = sum;
+        }
+#elif __x86_64__
+        for (size_t i = 0; i < m1.shape[0]; i += 1) {
+            for (size_t j = 0; j < m2.shape[1]; j += 1) {
+                __m128 sum = _mm_setzero_ps();
+                for (size_t k = 0; k < m1.shape[1] - 3; k += 4) {
+                    __m128 t1 = _mm_loadu_ps(m1.data[i] + k);
+                    float* tempB = new float[4];
+                    for (size_t t = k; t < k + 4 && t < m1.shape[1] - 3; t += 1) {
+                        tempB[t - k] = m2.data[t][j];
+                    }
+                    __m128 t2 = _mm_loadu_ps(tempB);
+                    t1 = _mm_mul_ps(t1, t2);
+                    sum = _mm_add_ps(sum, t1);
+                }
+                sum = _mm_hadd_ps(sum, sum);
+                sum = _mm_hadd_ps(sum, sum);
+                _mm_store_ss(result->data[i] + j, sum);
+                size_t mod = m1.shape[1] % 4;
+                for (size_t k = m1.shape[1] - mod; k < m1.shape[1]; k++) {
+                    result->data[i][j] += m1.data[i][k] * m2.data[k][j];
+                }
+            }
+        }
+#endif
+    } else {
+        for (size_t i = 0; i < m1.shape[0]; i += 1) {
+            for (size_t j = 0; j < m2.shape[1]; j += 1) {
+                float sum = 0.0;
+                for (size_t k = 0; k < m1.shape[1]; k += 1) {
+                    sum += m1.data[i][k] * m2.data[k][j];
+                }
+                result->data[i][j] = sum;
+            }
         }
     }
     return result;
@@ -183,6 +245,10 @@ Array::Array(size_t shape) {
     this->shape = shape;
 }
 
+Array::~Array() {
+    delete[] this->data;
+}
+
 void Array::random_init() {
     random_device seed;
     ranlux48 engine(seed());
@@ -223,26 +289,52 @@ Array* operator-(const Array& a1, const Array& a2) {
 }
 
 Matrix* operator+(const Array& a, const Matrix& m) {
-    if (a.shape != m.shape[0]) {
+    if (a.shape != m.shape[1]) {
         throw "Shape error!";
     }
     Matrix* result = new Matrix(m.shape);
-    for (size_t i = 0; i < result->shape[0]; i += 1) {
-        for (size_t j = 0; j < result->shape[1]; j += 1) {
-            result->data[i][j] = a.data[i] + m.data[i][j];
+    for (size_t j = 0; j < result->shape[0]; j += 1) {
+        for (size_t i = 0; i < result->shape[1]; i += 1) {
+            result->data[i][j] = m.data[i][j] + a.data[j];
         }
     }
     return result;
 }
 
 Matrix* operator+(const Matrix& m, const Array& a) {
-    if (a.shape != m.shape[0]) {
+    if (a.shape != m.shape[1]) {
         throw "Shape error!";
     }
     Matrix* result = new Matrix(m.shape);
     for (size_t i = 0; i < result->shape[0]; i += 1) {
-        for (size_t j = 0; j < result->shape[1]; j += 1) {
-            result->data[i][j] = m.data[i][j] + a.data[j];
+        if (Config::simd) {
+#ifdef __aarch64__
+            for (size_t j = 0; j < result->shape[1] - 3; j += 4) {
+                float32x4_t a4 = vld1q_f32(a[i] + j);
+                float32x4_t b4 = vld1q_f32(b + j);
+                float32x4_t c4 = vaddq_f32(a4, b4);
+                vst1q_f32(c[i] + j, c4);
+            }
+            size_t mod = result->shape[1] % 4;
+            for (size_t j = result->shape[1] - mod; j < result->shape[1]; j++) {
+                c[i][j] = a[i][j] + b[j];
+            }
+#elif __x86_64__
+            for (size_t j = 0; j < result->shape[1] - 3; j += 4) {
+                __m128 t1 = _mm_loadu_ps(m.data[i] + j);
+                __m128 t2 = _mm_loadu_ps(a.data + j);
+                t1 = _mm_add_ps(t1, t2);
+                _mm_storeu_ps(result->data[i] + j, t1);
+            }
+            size_t mod = result->shape[1] % 4;
+            for (size_t j = result->shape[1] - mod; j < result->shape[1]; j++) {
+                result->data[i][j] = m.data[i][j] + a.data[j];
+            }
+#endif
+        } else {
+            for (size_t j = 0; j < result->shape[1]; j += 1) {
+                result->data[i][j] = m.data[i][j] + a.data[j];
+            }
         }
     }
     return result;

@@ -1,5 +1,5 @@
 build:
-	g++ -O2 module.cpp test.cpp -o main
+	g++ -msse4.1 module.cpp fnn.cpp test.cpp -o main -g
 
 build-qemu:
 	aarch64-linux-gnu-g++ -O2 -o main-qemu -mcpu=cortex-a76 module.cpp test.cpp

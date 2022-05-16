@@ -3,6 +3,15 @@
 #include <vector>
 using std::vector;
 class Array;
+
+class Config {
+public:
+    static bool simd;
+    static void setSimd(bool simd) {
+        Config::simd = simd;
+    }
+};
+
 class Matrix {
 private:
     float** data;
@@ -11,6 +20,7 @@ private:
 public:
     Matrix(float** data, vector<size_t> shape);
     Matrix(vector<size_t> shape);
+    ~Matrix();
     Matrix* operator-();
     friend Matrix* operator+(const Matrix& m1, const Matrix& m2);
     friend Matrix* operator-(const Matrix& m1, const Matrix& m2);
@@ -38,6 +48,7 @@ private:
 public:
     Array(float* data, size_t shape);
     Array(size_t shape);
+    ~Array();
     Array* operator-();
     friend Array* operator+(const Array& a1, const Array& a2);
     friend Array* operator-(const Array& a1, const Array& a2);

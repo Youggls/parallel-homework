@@ -1,18 +1,13 @@
 #include "./module.hpp"
+#include "./fnn.hpp"
 
 int main() {
-    Matrix* a = new Matrix({2, 3});
-    a->setOnes();
-    Matrix* b = new Matrix({3, 2});
-    b->setOnes();
-    Matrix* c = (*a) + 2;
-    Matrix* d = -(*a);
-    d->printMatrix();
-    Array* arr = new Array(2);
-    arr->setOnes();
-    arr = *arr + *arr;
-    arr->printArray();
-    Matrix* test = *a + *arr;
-    test->printMatrix();
+    size_t inputSize = 20;
+    size_t hiddenSize = 40;
+    size_t outputSize = 50;
+    Network* n = new Network(inputSize, hiddenSize, outputSize, true);
+    Matrix* input = new Matrix({40, inputSize});
+    input->setOnes();
+    Matrix* output = n->forward(input);
     return 0;
 }
