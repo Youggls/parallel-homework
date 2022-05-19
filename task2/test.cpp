@@ -1,13 +1,13 @@
 #include "./module.hpp"
 #include "./fnn.hpp"
+#include "./utils.cpp"
 
 int main() {
-    size_t inputSize = 20;
-    size_t hiddenSize = 40;
-    size_t outputSize = 50;
-    Network* n = new Network(inputSize, hiddenSize, outputSize, true);
-    Matrix* input = new Matrix({40, inputSize});
-    input->setOnes();
-    Matrix* output = n->forward(input);
+    size_t inputSize = 200;
+    size_t hiddenSize = 400;
+    size_t outputSize = 500;
+    size_t threadNum = 12;
+    size_t perThreadDataSize = 1000;
+    std::cout << testPthread(inputSize, hiddenSize, outputSize, threadNum, perThreadDataSize, true);
     return 0;
 }

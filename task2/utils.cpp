@@ -37,7 +37,7 @@ int testPthread(size_t inputSize, size_t hiddenSize, size_t outputSize, size_t t
         threadDatas[i] = new struct ThreadData;
         threadDatas[i]->data = mats[i];
         threadDatas[i]->net = nets[i];
-        pthread_create(&threads[i], NULL, thread_worker, (void*)&threadDatas[i]);
+        pthread_create(&threads[i], NULL, thread_worker, (void*)threadDatas[i]);
     }
     for (size_t i = 0; i < threadNum; i++) {
         void* thrd_ret;

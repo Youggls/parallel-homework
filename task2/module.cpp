@@ -310,14 +310,14 @@ Matrix* operator+(const Matrix& m, const Array& a) {
         if (Config::simd) {
 #ifdef __aarch64__
             for (size_t j = 0; j < result->shape[1] - 3; j += 4) {
-                float32x4_t a4 = vld1q_f32(a[i] + j);
-                float32x4_t b4 = vld1q_f32(b + j);
+                float32x4_t a4 = vld1q_f32(m.data[i] + j);
+                float32x4_t b4 = vld1q_f32(a.data + j);
                 float32x4_t c4 = vaddq_f32(a4, b4);
-                vst1q_f32(c[i] + j, c4);
+                vst1q_f32(result->data[i] + j, c4);
             }
             size_t mod = result->shape[1] % 4;
             for (size_t j = result->shape[1] - mod; j < result->shape[1]; j++) {
-                c[i][j] = a[i][j] + b[j];
+                result->data[i][j] = m.data[i][j] + a.data[j];
             }
 #elif __x86_64__
             for (size_t j = 0; j < result->shape[1] - 3; j += 4) {
