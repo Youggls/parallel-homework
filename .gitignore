@@ -47,3 +47,4 @@ main-huawei
 res*.txt
 # VS Code configuration
 .vscode/
+x64.csv

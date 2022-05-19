@@ -19,13 +19,13 @@ void* thread_worker(void* arg) {
 }
 
 int testPthread(size_t inputSize, size_t hiddenSize, size_t outputSize, size_t threadNum, size_t perThreadDataSize, bool simd) {
-    std::cout << "Test Pthread" << std::endl;
-    std::cout << "Input Size: " << inputSize << std::endl;
-    std::cout << "Hidden Size: " << hiddenSize << std::endl;
-    std::cout << "Output Size: " << outputSize << std::endl;
-    std::cout << "Thread Number: " << threadNum << std::endl;
-    std::cout << "Per Thread Data Size: " << perThreadDataSize << std::endl;
-    std::cout << "Total Data Size: " << perThreadDataSize * threadNum << std::endl;
+    // std::cout << "Test Pthread" << std::endl;
+    // std::cout << "Input Size: " << inputSize << std::endl;
+    // std::cout << "Hidden Size: " << hiddenSize << std::endl;
+    // std::cout << "Output Size: " << outputSize << std::endl;
+    // std::cout << "Thread Number: " << threadNum << std::endl;
+    // std::cout << "Per Thread Data Size: " << perThreadDataSize << std::endl;
+    // std::cout << "Total Data Size: " << perThreadDataSize * threadNum << std::endl;
     Network** nets = new Network*[threadNum];
     Matrix** mats = new Matrix*[threadNum];
     struct ThreadData** threadDatas = new struct ThreadData*[threadNum];
@@ -43,12 +43,13 @@ int testPthread(size_t inputSize, size_t hiddenSize, size_t outputSize, size_t t
     for (size_t i = 0; i < threadNum; i++) {
         void* thrd_ret;
         int res = pthread_join(threads[i], &thrd_ret);
-        if (!res) {
-            printf("Thread %ld joined\n", i);
-        } else {
-            printf("Thread %ld join failed\n", i);
-        }
+        // if (!res) {
+        //     printf("Thread %ld joined\n", i);
+        // } else {
+        //     printf("Thread %ld join failed\n", i);
+        // }
     }
     clock_gettime(CLOCK_MONOTONIC, &end);
+    std::cout << inputSize << "," << hiddenSize << "," << outputSize << "," << threadNum << "," << perThreadDataSize << "," << simd << "," << (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000 << std::endl;
     return (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
 }
