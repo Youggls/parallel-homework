@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include "util.h"
-
+#include <iostream>
 
 //CPU对照组，用于对比加速比
 void sumMatrix2DonCPU(float* MatA, float* MatB, float* MatC, int nx, int ny)
@@ -79,6 +79,7 @@ __global__ void matrixMulGlobalKernel(float* pfMatrixA, float* pfMatrixB, float*
 }
 
 void test(int batchSize, int featureSize ,int hiddenSize, int outSize) {
+    printf("%d,%d,%d,", batchSize, featureSize, hiddenSize);
     int weight1NBytes = featureSize * hiddenSize * sizeof(float);
     int weight2NBytes = hiddenSize * outSize * sizeof(float);
     float* weight1 = (float*)malloc(weight1NBytes);
@@ -133,24 +134,51 @@ void test(int batchSize, int featureSize ,int hiddenSize, int outSize) {
     free(batchData);
     free(tempData);
     free(resultData);
-    printf("%d,%d,%d,%f\n", batchSize, featureSize, hiddenSize, gpuTime * 1000);
+    cudaFree(weight1Dev);
+    cudaFree(weight2Dev);
+    cudaFree(bias1Dev);
+    cudaFree(bias2Dev);
+    free(weight1);
+    free(weight2);
+    free(bias1);
+    free(bias2);
+    printf("%f\n", gpuTime * 1000);
 }
 
 int main(int argc, char** argv) {
-    printf("strating...\n");
-    initDevice(0);
-
-    // 输入二维矩阵，4096 * 4096，单精度浮点型。
-    int batchSizeArr[] = {512, 1024, 2048};
-    int featureSizeArr[] = {256, 512, 1024};
-    int hiddenSizeArr[] = {2048, 4096, 8196};
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                test(batchSizeArr[i], featureSizeArr[j], hiddenSizeArr[k], 32);
-            }
+    int batchSize = 64;
+    int featureSize = 1024;
+    int hiddenSize = 1024;
+    int outSize = 32;
+    for (size_t i = 1; i < argc; i += 2) {
+        if (strcmp(argv[i], "-d") == 0) {
+            batchSize = atoi(argv[i + 1]);
+        } else if (strcmp(argv[i], "-f") == 0) {
+            featureSize = atoi(argv[i + 1]);
+        } else if (strcmp(argv[i], "-h") == 0) {
+            hiddenSize = atoi(argv[i + 1]);
+        } else if (strcmp(argv[i], "-o") == 0) {
+            outSize = atoi(argv[i + 1]);
+        } else {
+            std::cout << argv[i];
+            std::cerr << " Invalid argument" << std::endl;
+            return 1;
         }
     }
+    // printf("strating...\n");
+    initDevice(0);
+    test(batchSize, featureSize, hiddenSize, outSize);
+    // // 输入二维矩阵，4096 * 4096，单精度浮点型。
+    // int batchSizeArr[] = {512, 1024, 2048};
+    // int featureSizeArr[] = {256, 512, 1024};
+    // int hiddenSizeArr[] = {2048, 4096, 8196};
+    // for (int i = 0; i < 3; i++) {
+    //     for (int j = 0; j < 3; j++) {
+    //         for (int k = 0; k < 3; k++) {
+    //             test(batchSizeArr[i], featureSizeArr[j], hiddenSizeArr[k], 32);
+    //         }
+    //     }
+    // }
     // Malloc，开辟主机内存
     // float* A_host = (float*)malloc(nBytes);
     // float* B_host = (float*)malloc(nBytes);
