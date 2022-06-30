@@ -2,6 +2,6 @@
 
 1. [SIMD](./task1/README.md)
 
-2. Multi thread(Pthread or MPI)
+2. [Pthread](./task2/README.md)
 
-3. CUDA or OMP
+3. [CUDA](./task3/README.md)
